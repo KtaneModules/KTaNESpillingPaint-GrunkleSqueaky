@@ -144,7 +144,7 @@ public class spillingPaint : MonoBehaviour
     private static readonly Regex tpRegex = new Regex("^((([abcdef][123456])|[roygbp]|red|orange|yellow|green|blue|purple)( |$))+$");
 
 #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"Use <!{0} red> to change colors (red/orange/yellow/green/blue/purple), <!{0} A1> to spill the selected color in that cell (A1-F6, letters for columns), and <!{0} reset> to reset. Commands can be chained with semicolons, for example <!{0} red;A1;A2;blue;D3>";
+    private readonly string TwitchHelpMessage = @"Use <!{0} red> to change colors (red/orange/yellow/green/blue/purple) , <!{0} A1> to spill the selected color in that cell (A1-F6, letters for columns), and <!{0} reset> to reset. Commands can be chained with spaces, for example <!{0} red A1 A2 blue D3>";
 #pragma warning restore 414
 
     IEnumerator ProcessTwitchCommand(string command)
