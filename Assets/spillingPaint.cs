@@ -131,7 +131,7 @@ public class spillingPaint : MonoBehaviour
             placedColors.Add(selectedColor);
             placedPositions.Add(pos);
             FieldPress(pos);
-            Debug.LogFormat("[Spilling Colors #{0}] Spilled {1} at position {2} in reading order.", moduleId, selectedColor.ToString(), pos + 1);
+            Debug.LogFormat("[Spilling Paint #{0}] Spilled {1} at position {2} in reading order.", moduleId, selectedColor.ToString(), pos + 1);
             spillCount = 0;
         }
         for (int i = 0; i < 36; i++)
