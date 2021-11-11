@@ -6,9 +6,10 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using KModkit;
 
-public class spillingPaint : MonoBehaviour {
+public class spillingPaint : MonoBehaviour
+{
 
-    enum Colors {white,red,orange,yellow,green,blue,purple}
+    enum Colors { white, red, orange, yellow, green, blue, purple }
     public KMBombInfo Bomb;
     public KMAudio Audio;
     public KMBombModule Module;
@@ -35,7 +36,7 @@ public class spillingPaint : MonoBehaviour {
         {0,0,0,0,0,0},
         {0,0,0,0,0,0}
     };
-    int[,] puzzle = new int[,] 
+    int[,] puzzle = new int[,]
     {
         {0,0,0,0,0,0},
         {0,0,0,0,0,0},
@@ -45,7 +46,7 @@ public class spillingPaint : MonoBehaviour {
         {0,0,0,0,0,0}
     };
 
-    void Awake ()
+    void Awake()
     {
         moduleId = moduleIdCounter++;
         for (int i = 0; i < 36; i++)
@@ -61,7 +62,7 @@ public class spillingPaint : MonoBehaviour {
         resetButton.OnInteract += delegate () { ResetPress(); return false; };
     }
 
-    void FieldPress (int index)
+    void FieldPress(int index)
     {
         spillCount++;
         int y = index / 6;
@@ -70,7 +71,7 @@ public class spillingPaint : MonoBehaviour {
         {
             for (int x1 = -1; x1 < 2; x1++)
             {
-                if((y+y1 < 0) || (y+y1 > 5) || (x+x1 < 0) || (x+x1 > 5)) { continue; }
+                if ((y + y1 < 0) || (y + y1 > 5) || (x + x1 < 0) || (x + x1 > 5)) { continue; }
                 FieldColor(y + y1, x + x1);
             }
         }
@@ -80,18 +81,18 @@ public class spillingPaint : MonoBehaviour {
         }
     }
 
-    void FieldColor (int y, int x)
+    void FieldColor(int y, int x)
     {
         field[y, x] += (int)selectedColor;
         field[y, x] %= 7;
         fieldButtons[y * 6 + x].GetComponent<MeshRenderer>().material = colorMats[field[y, x]];
     }
 
-    void CheckSolve ()
+    void CheckSolve()
     {
         for (int i = 0; i < 36; i++)
-        { 
-            if (field[i/6,i%6] != 0)
+        {
+            if (field[i / 6, i % 6] != 0)
             {
                 ResetPress();
                 return;
@@ -100,7 +101,7 @@ public class spillingPaint : MonoBehaviour {
         Module.HandlePass();
     }
 
-    void SelectorPress (int index)
+    void SelectorPress(int index)
     {
         colorSelector[index].AddInteractionPunch(0.25f);
         if ((int)selectedColor != index + 1)
@@ -109,7 +110,7 @@ public class spillingPaint : MonoBehaviour {
         resetButton.GetComponent<MeshRenderer>().material = colorMats[index + 1];
     }
 
-    void ResetPress ()
+    void ResetPress()
     {
         Audio.PlaySoundAtTransform("resetSelectSound", resetButton.transform);
         resetButton.AddInteractionPunch(0.5f);
@@ -121,7 +122,7 @@ public class spillingPaint : MonoBehaviour {
         }
     }
 
-    void Start ()
+    void Start()
     {
         int[] chosenPositions = Enumerable.Range(0, 36).ToArray().Shuffle().Take(7).ToArray();
         foreach (int pos in chosenPositions)
@@ -140,76 +141,47 @@ public class spillingPaint : MonoBehaviour {
         resetButton.GetComponent<MeshRenderer>().material = colorMats[0];
     }
 
-    #pragma warning disable 414
-    private readonly string TwitchHelpMessage = @"Use <!{0} red> to change colors (red/orange/yellow/green/blue/purple), <!{0} A1> to spill the selected color in that cell (A1-F6, letters for columns), and <!{0} reset> to reset. Commands can be chained with semicolons, for example <!{0} red;A1;A2;blue;D3>";
-    #pragma warning restore 414
+    private static readonly Regex tpRegex = new Regex("^((([abcdef][123456])|[roygbp]|red|orange|yellow|green|blue|purple)( |$))+$");
 
-    IEnumerator ProcessTwitchCommand (string command)
+#pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"Use <!{0} red> to change colors (red/orange/yellow/green/blue/purple), <!{0} A1> to spill the selected color in that cell (A1-F6, letters for columns), and <!{0} reset> to reset. Commands can be chained with semicolons, for example <!{0} red;A1;A2;blue;D3>";
+#pragma warning restore 414
+
+    IEnumerator ProcessTwitchCommand(string command)
     {
         command = command.Trim().ToLowerInvariant();
-        List<string> parameters = command.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-        yield return null;
         if (command == "reset")
         {
+            yield return null;
             resetButton.OnInteract();
+            yield break;
         }
-        else
+        var m = tpRegex.Match(command);
+        if (m.Success)
         {
-            for (int i = 0; i < parameters.Count(); i++)
+            yield return null;
+            var pieces = m.Groups[0].ToString().Split(' ');
+            var selectables = new List<KMSelectable>();
+
+            foreach (var piece in pieces)
             {
-                if (parameters[i] == "red")
+                if (piece.Length == 2)
                 {
-                    colorSelector[0].OnInteract();
-                }
-                else if (parameters[i] == "orange")
-                {
-                    colorSelector[1].OnInteract();
-                }
-                else if (parameters[i] == "yellow")
-                {
-                    colorSelector[2].OnInteract();
-                }
-                else if (parameters[i] == "green")
-                {
-                    colorSelector[3].OnInteract();
-                }
-                else if (parameters[i] == "blue")
-                {
-                    colorSelector[4].OnInteract();
-                }
-                else if (parameters[i] == "purple")
-                {
-                    colorSelector[5].OnInteract();
-                }
-                else if (!"abcdef".Contains(parameters[i][0]) || !"123456".Contains(parameters[i][1]))
-                {
-                    yield return "sendtochaterror I don't understand!";
+                    fieldButtons[(int.Parse(piece[1].ToString()) - 1) * 6 + "abcdef".IndexOf(piece[0])].OnInteract();
+                    yield return new WaitForSeconds(0.1f);
                 }
                 else
                 {
-                    int Index = 0;
-                    for (int r = 0; r < 6; r++)
-                    {
-                        if (parameters[i][1] == "123456"[r])
-                        {
-                            Index += r * 6;
-                        }
-                    }
-                    for (int r = 0; r < 6; r++)
-                    {
-                        if (parameters[i][0] == "abcdef"[r])
-                        {
-                            Index += r;
-                        }
-                    }
-                    fieldButtons[Index].OnInteract();
+                    colorSelector["roygbp".IndexOf(piece[0])].OnInteract();
+                    yield return new WaitForSeconds(0.1f);
                 }
-                yield return new WaitForSeconds(0.1f);
             }
+            yield break;
         }
+        yield break;
     }
 
-    IEnumerator TwitchHandleForcedSolve ()
+    IEnumerator TwitchHandleForcedSolve()
     {
         yield return null;
         for (int i = 0; i < 7; i++)
